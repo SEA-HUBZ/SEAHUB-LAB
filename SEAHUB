@@ -98,19 +98,6 @@ local function collectStats()
     return collectedStats, collectedRewards, collectedDrops
 end
 
--- Function to check if all Titans are gone
-local function checkAllTitansGone()
-    local titans = workspace.Titans:GetChildren()
-    return #titans == 0 -- True if no Titans left
-end
-
--- Queue on teleport (for supported environments)
-local queueteleport = syn and syn.queue_on_teleport or queue_on_teleport or fluxus and fluxus.queue_on_teleport
-if queueteleport then
-    -- Replaced the loadstring as requested
-    queueteleport('loadstring(game:HttpGet("https://raw.githubusercontent.com/SEA-HUBZ/SEAHUB-LAB/main/SEAHUB",true))()')
-end
-
 -- Function to send stats, rewards, and drops as a webhook
 local function sendStatsWebhook()
     local stats, rewards, drops = collectStats()
@@ -231,18 +218,13 @@ end
 -- Main loop using RenderStepped with cooldown
 RunService.RenderStepped:Connect(function()
     local currentTime = tick()
-    
-    if checkAllTitansGone() then
-        if not embedSent and (currentTime - lastSentTime >= cooldownTime) then
-            print("Titans Found")
-            sendStatsWebhook()
-            embedSent = true
-            lastSentTime = currentTime
-            -- Wait 10 second after sending the webhook
-            task.wait(10)
-        end
-    else
-        print("Waiting for all Titans to be gone...")
-        embedSent = false -- Reset flag when Titans are present
+
+    if not embedSent and (currentTime - lastSentTime >= cooldownTime) then
+        print("Sending stats webhook...")
+        sendStatsWebhook()
+        embedSent = true
+        lastSentTime = currentTime
+        -- Wait 10 second after sending the webhook
+        task.wait(10)
     end
 end)
