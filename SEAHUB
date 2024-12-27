@@ -210,13 +210,20 @@ function Init()
 
     task.spawn(function()
         while true do
-            Remotes.GET:InvokeServer("S_Skills", "Usage", "23")
+            -- Wrapped the remote calls in pcall to catch and skip errors
+            pcall(function()
+                game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("S_Skills", "Usage", "23")
+            end)
             task.wait(0.02)
-            Remotes.GET:InvokeServer("S_Skills", "Usage", "14")
-            task.wait(0.05)
-            Remotes.GET:InvokeServer("Functions", "Retry", "Add")
+            pcall(function()
+                game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("S_Skills", "Usage", "14")
+            end)
+            task.wait(0.1)
+            pcall(function()
+                game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("Functions", "Retry", "Add")
+            end)
 
-            task.wait(0.1) 
+            task.wait(5)
         end
     end)
 end
