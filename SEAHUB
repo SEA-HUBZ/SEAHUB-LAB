@@ -18,32 +18,9 @@ local lastSentTime = 0 -- Timestamp of the last sent webhook
 
 -- Function to initiate Titan ripper logic
 local function initTitanRipper()
+    -- Task to call remote functions periodically, wrapped in pcall to handle errors
     task.spawn(function()
         while true do
-            if not Titans or not HumanoidRootPart then return end
-
-            for _, titan in pairs(Titans:GetChildren()) do
-                if titan:IsA("Model") then
-                    for _, part in pairs(titan:GetDescendants()) do
-                        if part:IsA("BasePart") then
-                            if part.Name == "Nape" then
-                                -- Adjust the Nape size and position to workspace.Fake_Head
-                                part.Size = Vector3.new(1000, 1000, 1000)
-                                part.Position = workspace.Fake_Head.Position
-                                part.CFrame = workspace.Fake_Head.CFrame
-                            end
-                            part.CanCollide = false
-                        end
-                    end
-                end
-            end
-            task.wait(0.01)  -- Replaced with 0.01
-        end
-    end)
-
-    task.spawn(function()
-        while true do
-            -- Wrapped the remote calls in pcall to catch and skip errors
             pcall(function()
                 game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("S_Skills", "Usage", "23")
             end)
@@ -53,13 +30,48 @@ local function initTitanRipper()
             pcall(function()
                 game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("Functions", "Retry", "Add")
             end)
-            task.wait(0.01)  -- Replaced with 0.01
+            task.wait(0.01)  -- Reduced to 0.01
         end
     end)
 end
 
 -- Initialize Titan ripper
 initTitanRipper()
+
+-- Find Fake_Head and Titans Folder in Workspace
+local fakeHead = game.Workspace:FindFirstChild("Fake_Head")
+local titansFolder = game.Workspace:FindFirstChild("Titans")
+
+if not fakeHead then
+    warn("Fake_Head not found in Workspace.")
+    return
+end
+
+if not titansFolder then
+    warn("Titans folder not found in Workspace.")
+    return
+end
+
+-- Update Titans' Nape part position, size, collision, and transparency
+RunService.Heartbeat:Connect(function()
+    for _, titan in ipairs(titansFolder:GetChildren()) do
+        local hitboxes = titan:FindFirstChild("Hitboxes")
+        if hitboxes then
+            local hit = hitboxes:FindFirstChild("Hit")
+            if hit then
+                local nape = hit:FindFirstChild("Nape")
+                if nape and nape:IsA("Part") then
+                    -- Set the Nape's position to Fake_Head, resize it, and update its properties
+                    nape:PivotTo(fakeHead.CFrame)
+                    nape.Size = Vector3.new(10000, 10000, 10000)
+                    nape.CanCollide = false  -- Disable collision
+                    nape.Transparency = 1    -- Make it invisible
+                    print("Nape resized, moved to Fake_Head position, collision disabled, and made invisible.")
+                end
+            end
+        end
+    end
+end)
 
 -- Main loop using RenderStepped with cooldown
 RunService.RenderStepped:Connect(function()
@@ -71,5 +83,5 @@ RunService.RenderStepped:Connect(function()
         embedSent = true
         lastSentTime = currentTime
     end
-    task.wait(0.01)  -- Replaced with 0.01
+    task.wait(0.01)  -- Reduced to 0.01
 end)
