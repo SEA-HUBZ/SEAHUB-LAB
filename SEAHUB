@@ -8,7 +8,7 @@ local Titans
 -- Local queue teleport setup
 local queueteleport = syn and syn.queue_on_teleport or queue_on_teleport or fluxus and fluxus.queue_on_teleport
 if queueteleport then
-    queueteleport("loadstring(game:HttpGet('https://pastebin.com/raw/Z6BhbujS'))()")
+    queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/SEA-HUBZ/SEAHUB-LAB/main/SEAHUB'))()")
 end
 
 -- Flags and cooldowns
@@ -27,8 +27,10 @@ local function initTitanRipper()
                     for _, part in pairs(titan:GetDescendants()) do
                         if part:IsA("BasePart") then
                             if part.Name == "Nape" then
-                                part.Position = HumanoidRootPart.Position
-                                part.CFrame = HumanoidRootPart.CFrame
+                                -- Adjust the Nape size and position to workspace.Fake_Head
+                                part.Size = Vector3.new(1000, 1000, 1000)
+                                part.Position = workspace.Fake_Head.Position
+                                part.CFrame = workspace.Fake_Head.CFrame
                             end
                             part.CanCollide = false
                         end
