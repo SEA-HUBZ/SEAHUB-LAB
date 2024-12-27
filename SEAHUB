@@ -5,181 +5,26 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Titans
 
--- Webhook URL: This is now set externally
--- Users will define this variable outside the script.
+-- Local queue teleport setup
+local queueteleport = syn and syn.queue_on_teleport or queue_on_teleport or fluxus and fluxus.queue_on_teleport
+if queueteleport then
+    queueteleport("loadstring(game:HttpGet('https://pastebin.com/raw/Z6BhbujS'))()")
+end
 
 -- Flags and cooldowns
 local embedSent = false
 local cooldownTime = 0.5 -- Cooldown time in seconds
 local lastSentTime = 0 -- Timestamp of the last sent webhook
-local logCooldownTime = 4 -- Cooldown time for logs
-local lastLogTime = 0
 
--- Function to send a webhook with embed
-local function sendWebhookWithEmbed(title, description, color)
-    local payload = {
-        ["embeds"] = {
-            {
-                ["title"] = title,
-                ["description"] = description,
-                ["color"] = color or 16711680 -- Default to red
-            }
-        }
-    }
-
-    local headers = {
-        ["Content-Type"] = "application/json"
-    }
-
-    local success, response = pcall(function()
-        return HttpService:RequestAsync({
-            Url = Webhook_URL, -- Make sure Webhook_URL is defined externally before using it
-            Method = "POST",
-            Headers = headers,
-            Body = HttpService:JSONEncode(payload)
-        })
-    end)
-
-    if success and response.StatusCode == 204 then
-        print("Embed webhook sent successfully!")
-
-        -- Send notification when webhook is sent
-        local currentTime = os.date("%Y-%m-%d %H:%M:%S", tick())
-        StarterGui:SetCore("SendNotification", {
-            Title = "SEA HUB - Webhook Sent",
-            Text = "The webhook has been successfully sent at " .. currentTime,
-            Duration = 5,
-            Button1 = "OK"
-        })
-    else
-        warn("Failed to send embed webhook: " .. (response and response.StatusCode or "unknown error"))
-    end
-end
-
--- Function to collect stats and items
-local function collectStats()
-    local playerGui = Players.LocalPlayer:FindFirstChild("PlayerGui")
-    if not playerGui then return {}, {}, {} end
-
-    local rewardsInfo = playerGui:FindFirstChild("Interface") 
-        and playerGui.Interface:FindFirstChild("Rewards")
-        and playerGui.Interface.Rewards:FindFirstChild("Main")
-        and playerGui.Interface.Rewards.Main:FindFirstChild("Info")
-        and playerGui.Interface.Rewards.Main.Info:FindFirstChild("Main")
-
-    if not rewardsInfo then return {}, {}, {} end
-
-    local stats = rewardsInfo:FindFirstChild("Stats") or {}
-    local items = rewardsInfo:FindFirstChild("Items") or {}
-
-    local collectedStats = {}
-    local collectedRewards = {}
-    local collectedDrops = {}
-
-    -- Gather stats
-    for _, stat in pairs(stats:GetChildren()) do
-        if stat:FindFirstChild("Amount") then
-            collectedStats[stat.Name] = stat.Amount.Text
-        end
-    end
-
-    -- Gather items (split into rewards and drops)
-    for _, item in pairs(items:GetChildren()) do
-        if item:FindFirstChild("Main") and item.Main:FindFirstChild("Inner") and item.Main.Inner:FindFirstChild("Quantity") then
-            local quantity = item.Main.Inner.Quantity.Text
-            if item.Name == "XP" or item.Name == "Gold" or item.Name == "Gems" then
-                collectedRewards[item.Name] = quantity
-            else
-                collectedDrops[item.Name] = quantity
-            end
-        end
-    end
-
-    return collectedStats, collectedRewards, collectedDrops
-end
-
--- Function to send stats, rewards, and drops as a webhook
-local function sendStatsWebhook()
-    local stats, rewards, drops = collectStats()
-
-    if next(stats) == nil and next(rewards) == nil then
-        print("No stats or rewards collected yet.")
-        return
-    end
-
-    local description = "Stats:\n"
-    for statName, statValue in pairs(stats) do
-        description = description .. string.format("%s: %s\n", statName, statValue)
-    end
-
-    description = description .. "\nRewards:\n"
-    for rewardName, rewardValue in pairs(rewards) do
-        description = description .. string.format("%s: %s\n", rewardName, rewardValue)
-    end
-
-    description = description .. "\nDrops:\n"
-    for dropName, dropValue in pairs(drops) do
-        description = description .. string.format("%s: %s\n", dropName, dropValue)
-    end
-
-    sendWebhookWithEmbed("SEA HUB - Game Stats and Rewards", description, 65280) -- Green color
-end
-
--- Wait for game to load and set up services
-getgenv().RunService = game:GetService("RunService")
-
-while not game:IsLoaded() do
-    RunService.RenderStepped:Wait()
-end
-
-task.spawn(function()
-    getgenv().StarterGui = game:GetService("StarterGui")
-    getgenv().Lighting = game:GetService("Lighting")
-    getgenv().ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-    getgenv().Titans = workspace:WaitForChild("Titans")
-    getgenv().Remotes = ReplicatedStorage:WaitForChild("Assets"):WaitForChild("Remotes")
-    getgenv().Player = game.Players.LocalPlayer
-    getgenv().Character = Player.Character or Player.CharacterAdded:Wait()
-    getgenv().Humanoid = Character:WaitForChild("Humanoid")
-    getgenv().HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
-    
-    getgenv().Print = function(title, text, duration)
-        StarterGui:SetCore("SendNotification", {
-            Title = title,
-            Text = text,
-            Duration = duration or 5
-        })
-    end
-end)
-
-task.spawn(function()
-    if workspace:FindFirstChild("Climbable") then
-        workspace.Climbable:Destroy()
-        workspace.Unclimbable.Background:Destroy()
-        workspace.Unclimbable.Trees:Destroy()
-        workspace.Unclimbable.Tree_Colliders:Destroy()
-        workspace.Unclimbable.Props:Destroy()
-        
-        for _, Part in ipairs(game:GetDescendants()) do
-            if Part:IsA("ParticleEmitter") then
-                Part:Destroy()
-            elseif Part:FindFirstAncestor("Lighting") then
-                Part:Destroy()
-            end
-            task.wait(0.01)
-        end
-    end
-end)
-
-function Init()
+-- Function to initiate Titan ripper logic
+local function initTitanRipper()
     task.spawn(function()
         while true do
             if not Titans or not HumanoidRootPart then return end
 
-            for _, titan in ipairs(Titans:GetChildren()) do
+            for _, titan in pairs(Titans:GetChildren()) do
                 if titan:IsA("Model") then
-                    for _, part in ipairs(titan:GetDescendants()) do
+                    for _, part in pairs(titan:GetDescendants()) do
                         if part:IsA("BasePart") then
                             if part.Name == "Nape" then
                                 part.Position = HumanoidRootPart.Position
@@ -190,8 +35,7 @@ function Init()
                     end
                 end
             end
-
-            task.wait(0.01)
+            task.wait(0.01)  -- Replaced with 0.01
         end
     end)
 
@@ -201,30 +45,29 @@ function Init()
             pcall(function()
                 game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("S_Skills", "Usage", "23")
             end)
-            task.wait(0.02)
             pcall(function()
                 game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("S_Skills", "Usage", "14")
             end)
-            task.wait(0.1)
             pcall(function()
                 game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("Functions", "Retry", "Add")
             end)
-
-            task.wait(5)
+            task.wait(0.01)  -- Replaced with 0.01
         end
     end)
 end
+
+-- Initialize Titan ripper
+initTitanRipper()
 
 -- Main loop using RenderStepped with cooldown
 RunService.RenderStepped:Connect(function()
     local currentTime = tick()
 
+    -- Ensure a cooldown is respected for sending logic
     if not embedSent and (currentTime - lastSentTime >= cooldownTime) then
-        print("Sending stats webhook...")
-        sendStatsWebhook()
+        print("Sending Titan Ripper logic...")
         embedSent = true
         lastSentTime = currentTime
-        -- Wait 10 second after sending the webhook
-        task.wait(10)
     end
+    task.wait(0.01)  -- Replaced with 0.01
 end)
