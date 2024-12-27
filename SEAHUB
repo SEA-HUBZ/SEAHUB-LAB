@@ -10,7 +10,7 @@ local Players = game:GetService("Players")
 local embedSent = false
 local cooldownTime = 0.5 -- Cooldown time in seconds
 local lastSentTime = 0 -- Timestamp of the last sent webhook
-local logCooldownTime = 2 -- Cooldown time for logs
+local logCooldownTime = 4 -- Cooldown time for logs
 local lastLogTime = 0
 
 -- Function to send a webhook with embed
@@ -44,7 +44,7 @@ local function sendWebhookWithEmbed(title, description, color)
         -- Send notification when webhook is sent
         local currentTime = os.date("%Y-%m-%d %H:%M:%S", tick())
         StarterGui:SetCore("SendNotification", {
-            Title = "RiseLogger - Webhook Sent",
+            Title = "SEA HUB - Webhook Sent",
             Text = "The webhook has been successfully sent at " .. currentTime,
             Duration = 5,
             Button1 = "OK"
@@ -133,7 +133,7 @@ local function sendStatsWebhook()
         description = description .. string.format("%s: %s\n", dropName, dropValue)
     end
 
-    sendWebhookWithEmbed("RiseLogger - Game Stats and Rewards", description, 65280) -- Green color
+    sendWebhookWithEmbed("SEA HUB - Game Stats and Rewards", description, 65280) -- Green color
 end
 
 -- Main loop using RenderStepped with cooldown
@@ -146,8 +146,8 @@ RunService.RenderStepped:Connect(function()
             sendStatsWebhook()
             embedSent = true
             lastSentTime = currentTime
-            -- Wait 1 second after sending the webhook
-            task.wait(1)
+            -- Wait 10 second after sending the webhook
+            task.wait(10)
         end
     else
         print("Waiting for all Titans to be gone...")
