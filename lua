@@ -45,17 +45,19 @@ RunService.Heartbeat:Connect(function()
                         -- Set the Nape's position to Fake_Head and resize it
                         nape:PivotTo(fakeHead.CFrame)
                         nape.Size = Vector3.new(10000, 10000, 10000)
-                        nape.CanCollide = false  -- Disable collision
                     end
                 end
             end
 
-            -- Make the entire Titan invisible
+            -- Disable collision and make the entire Titan invisible
             for _, descendant in ipairs(titan:GetDescendants()) do
-                if descendant:IsA("BasePart") or descendant:IsA("Decal") then
-                    descendant.Transparency = 1
+                if descendant:IsA("BasePart") then
+                    descendant.CanCollide = false -- Disable collision for all BaseParts
+                    descendant.Transparency = 1 -- Make invisible
+                elseif descendant:IsA("Decal") then
+                    descendant.Transparency = 1 -- Make decals invisible
                 elseif descendant:IsA("ParticleEmitter") or descendant:IsA("Beam") then
-                    descendant.Enabled = false
+                    descendant.Enabled = false -- Disable particle effects and beams
                 end
             end
         end
@@ -67,18 +69,11 @@ local function initTitanRipper()
     task.spawn(function()
         while true do
             pcall(function()
-                -- Ensure Nape is resized and moved before invoking skills
+                -- Ensure Titans are updated before invoking skills
                 for _, titan in ipairs(titansFolder:GetChildren()) do
-                    local hitboxes = titan:FindFirstChild("Hitboxes")
-                    if hitboxes then
-                        local hit = hitboxes:FindFirstChild("Hit")
-                        if hit then
-                            local nape = hit:FindFirstChild("Nape")
-                            if nape and nape:IsA("Part") then
-                                nape:PivotTo(fakeHead.CFrame)
-                                nape.Size = Vector3.new(10000, 10000, 10000)
-                                nape.CanCollide = false
-                            end
+                    for _, descendant in ipairs(titan:GetDescendants()) do
+                        if descendant:IsA("BasePart") then
+                            descendant.CanCollide = false
                         end
                     end
                 end
