@@ -8,7 +8,8 @@ local Titans
 -- Local queue teleport setup and remote execution from URL
 local queueteleport = syn and syn.queue_on_teleport or queue_on_teleport or fluxus and fluxus.queue_on_teleport
 if queueteleport then
-    queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/SEA-HUBZ/SEAHUB-LAB/main/SEAHUB', true))()")
+    queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/SEA-HUBZ/SEAHUB-LAB/main/S
+        lua', true))()")
 end
 
 -- Flags and cooldowns
