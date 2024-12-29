@@ -5,58 +5,19 @@ if queueteleport then
     end)
 end
 
-local function deleteSpecificObjects()
-    local objectsToDelete = {
-        workspace.Climbable:FindFirstChild("Buildings"),
-        workspace.Climbable:FindFirstChild("Walls"),
-        workspace.Unclimbable:FindFirstChild("Trees"),
-        workspace.Unclimbable:FindFirstChild("Reloads"),
-        workspace.Unclimbable:FindFirstChild("Props"),
-        workspace.Unclimbable:FindFirstChild("Platforms")
-    }
-
-    for _, object in pairs(objectsToDelete) do
-        if object then
-            object:Destroy()
-        end
-    end
-end
-
-local function removeSounds(object)
-    if object:IsA("Sound") then
-        object:Destroy()
-    end
-end
-
-local function removeVisualEffects(object, isExcluded)
-    if not isExcluded then
-        if object:IsA("ParticleEmitter") or object:IsA("Trail") or object:IsA("Beam") or object:IsA("Decal") then
-            object:Destroy()
-        elseif object:IsA("PointLight") or object:IsA("SpotLight") or object:IsA("SurfaceLight") or object:IsA("Light") then
-            object.Brightness = 0
-            object.Enabled = false
-        elseif object:IsA("MeshPart") or object:IsA("SpecialMesh") then
-            object:Destroy()
-        end
-    end
-end
-
-local function isExcludedObject(object)
-    return object:IsDescendantOf(workspace.Titans) or object:IsDescendantOf(workspace.Points) or 
-           (object.Parent and object.Parent:IsA("Model") and object.Parent:FindFirstChild("Humanoid"))
-end
-
-local function deleteDebris()
-    for _, object in pairs(workspace.Debris:GetChildren()) do
-        object:Destroy()
-    end
-end
-
 local function updateTitansPosition()
-    local fakeHead = workspace:FindFirstChild("Fake_Head")
-    local titansFolder = workspace:FindFirstChild("Titans")
+    local fakeHead = game.Workspace:FindFirstChild("Fake_Head")
+    local titansFolder = game.Workspace:FindFirstChild("Titans")
 
-    if not fakeHead or not titansFolder then return end
+    if not fakeHead then
+        warn("Fake_Head not found in Workspace.")
+        return
+    end
+
+    if not titansFolder then
+        warn("Titans folder not found in Workspace.")
+        return
+    end
 
     game:GetService("RunService").Heartbeat:Connect(function()
         for _, titan in ipairs(titansFolder:GetChildren()) do
@@ -81,52 +42,160 @@ end
 local function invokeServerRequests()
     task.spawn(function()
         while true do
-            local replicatedStorage = game:GetService("ReplicatedStorage")
-            replicatedStorage.Assets.Remotes.GET:InvokeServer("S_Skills", "Usage", "23")
+            game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("S_Skills", "Usage", "23")
             task.wait(0.02)
-            replicatedStorage.Assets.Remotes.GET:InvokeServer("S_Skills", "Usage", "14")
+            game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("S_Skills", "Usage", "14")
             task.wait(0.1)
-            replicatedStorage.Assets.Remotes.GET:InvokeServer("Functions", "Retry", "Add")
+            game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("Functions", "Retry", "Add")
             task.wait(0.1)
         end
     end)
 end
 
-local function resetLighting()
-    local lighting = game:GetService("Lighting")
-    lighting.FogEnd = 100000
-    lighting.FogColor = Color3.fromRGB(255, 255, 255)
-    lighting.Ambient = Color3.fromRGB(255, 255, 255)
-    lighting.Brightness = 2
-    lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
-    lighting.IndirectLightingMultiplier = 1
-    lighting.Sky = nil
-    lighting.TimeOfDay = "14:00:00"
-    lighting.ClockTime = 12
+updateTitansPosition()
+invokeServerRequests()
+
+local function deleteSpecificObjects()
+    local objectsToDelete = {
+        workspace.Climbable:FindFirstChild("Buildings"),
+        workspace.Climbable:FindFirstChild("Walls"),
+        workspace.Unclimbable:FindFirstChild("Trees"),
+        workspace.Unclimbable:FindFirstChild("Reloads"),
+        workspace.Unclimbable:FindFirstChild("Props"),
+        workspace.Unclimbable:FindFirstChild("Platforms")
+    }
+
+    for _, object in pairs(objectsToDelete) do
+        pcall(function()
+            if object then
+                object:Destroy()
+            end
+        end)
+    end
 end
 
--- Run all functions concurrently
+local function removeSounds(object)
+    if object:IsA("Sound") then
+        pcall(function()
+            object:Destroy()
+        end)
+    end
+end
+
+local function removeVisualEffects(object, isExcluded)
+    if object:IsA("ParticleEmitter") or object:IsA("Trail") or object:IsA("Beam") or object:IsA("Decal") then
+        if not isExcluded then
+            pcall(function()
+                object:Destroy()
+            end)
+        end
+    end
+
+    if object:IsA("PointLight") or object:IsA("SpotLight") or object:IsA("SurfaceLight") or object:IsA("Light") then
+        if not isExcluded then
+            pcall(function()
+                object.Brightness = 0
+                object.Enabled = false
+            end)
+        end
+    end
+
+    if not isExcluded and (object:IsA("MeshPart") or object:IsA("SpecialMesh")) then
+        pcall(function()
+            object:Destroy()
+        end)
+    end
+end
+
+local function isExcludedObject(object)
+    if object.Parent and object.Parent:IsA("Model") and object.Parent:FindFirstChild("Humanoid") then
+        return true
+    end
+    if object:IsDescendantOf(workspace.Titans) then
+        return true
+    end
+    if object:IsDescendantOf(workspace.Points) then
+        return true
+    end
+    return false
+end
+
+local function deleteDebris()
+    for _, object in pairs(workspace.Debris:GetChildren()) do
+        pcall(function()
+            object:Destroy()
+        end)
+    end
+end
+
+local function resetLighting()
+    local lighting = game:GetService("Lighting")
+
+    pcall(function()
+        lighting.FogEnd = 100000
+    end)
+
+    pcall(function()
+        lighting.FogColor = Color3.fromRGB(255, 255, 255)
+    end)
+
+    pcall(function()
+        lighting.Ambient = Color3.fromRGB(255, 255, 255)
+    end)
+
+    pcall(function()
+        lighting.Brightness = 2
+    end)
+
+    pcall(function()
+        lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+    end)
+
+    pcall(function()
+        lighting.IndirectLightingMultiplier = 1
+    end)
+
+    pcall(function()
+        lighting.Sky = nil
+    end)
+
+    pcall(function()
+        lighting.TimeOfDay = "14:00:00"
+    end)
+
+    pcall(function()
+        lighting.ClockTime = 12
+    end)
+end
+
 task.spawn(function()
     for _, object in pairs(workspace:GetDescendants()) do
         local isExcluded = isExcludedObject(object)
-        removeVisualEffects(object, isExcluded)
+
+        pcall(function()
+            removeVisualEffects(object, isExcluded)
+        end)
+
         if not isExcluded then
-            removeSounds(object)
+            pcall(function()
+                removeSounds(object)
+            end)
         end
     end
 
     for _, player in pairs(game:GetService("Players"):GetPlayers()) do
         if player.Character then
-            for _, object in pairs(player.Character:GetDescendants()) do
-                removeSounds(object)
-                removeVisualEffects(object, true)
-            end
+            pcall(function()
+                for _, object in pairs(player.Character:GetDescendants()) do
+                    removeSounds(object)
+                    removeVisualEffects(object, true)
+                end
+            end)
         end
     end
-end)
 
-task.spawn(deleteDebris)
-task.spawn(deleteSpecificObjects)
-task.spawn(updateTitansPosition)
-task.spawn(invokeServerRequests)
-task.spawn(resetLighting)
+    deleteDebris()
+    deleteSpecificObjects()
+
+    resetLighting()
+end)
