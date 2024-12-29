@@ -1,8 +1,3 @@
-local HttpService = game:GetService("HttpService")
-local RunService = game:GetService("RunService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
--- Local queue teleport setup and remote execution from URL
 local queueteleport = syn and syn.queue_on_teleport or queue_on_teleport or fluxus and fluxus.queue_on_teleport
 if queueteleport then
     pcall(function()
@@ -10,120 +5,202 @@ if queueteleport then
     end)
 end
 
--- Flags and cooldowns
-local embedSent = false
-local cooldownTime = 0.5 -- Cooldown time in seconds
-local lastSentTime = 0 -- Timestamp of the last sent webhook
+local function deleteSpecificObjects()
+    local objectsToDelete = {
+        workspace.Climbable:FindFirstChild("Buildings"),
+        workspace.Climbable:FindFirstChild("Walls"),
+        workspace.Unclimbable:FindFirstChild("Trees"),
+        workspace.Unclimbable:FindFirstChild("Reloads"),
+        workspace.Unclimbable:FindFirstChild("Props"),
+        workspace.Unclimbable:FindFirstChild("Platforms")
+    }
 
--- Find Fake_Head and Titans Folder in Workspace
-local fakeHead, titansFolder
-pcall(function()
-    fakeHead = game.Workspace:FindFirstChild("Fake_Head")
-    titansFolder = game.Workspace:FindFirstChild("Titans")
-end)
-
-if not fakeHead then
-    warn("Fake_Head not found in Workspace.")
-    return
+    for _, object in pairs(objectsToDelete) do
+        pcall(function()
+            if object then
+                object:Destroy()
+            end
+        end)
+    end
 end
 
-if not titansFolder then
-    warn("Titans folder not found in Workspace.")
-    return
+local function removeSounds(object)
+    if object:IsA("Sound") then
+        pcall(function()
+            object:Destroy()
+        end)
+    end
 end
 
--- Update Titans' properties
-RunService.Heartbeat:Connect(function()
-    pcall(function()
+local function removeVisualEffects(object, isExcluded)
+    if object:IsA("ParticleEmitter") or object:IsA("Trail") or object:IsA("Beam") or object:IsA("Decal") then
+        if not isExcluded then
+            pcall(function()
+                object:Destroy()
+            end)
+        end
+    end
+
+    if object:IsA("PointLight") or object:IsA("SpotLight") or object:IsA("SurfaceLight") or object:IsA("Light") then
+        if not isExcluded then
+            pcall(function()
+                object.Brightness = 0
+                object.Enabled = false
+            end)
+        end
+    end
+
+    if not isExcluded and (object:IsA("MeshPart") or object:IsA("SpecialMesh")) then
+        pcall(function()
+            object:Destroy()
+        end)
+    end
+end
+
+local function isExcludedObject(object)
+    if object.Parent and object.Parent:IsA("Model") and object.Parent:FindFirstChild("Humanoid") then
+        return true
+    end
+    if object:IsDescendantOf(workspace.Titans) then
+        return true
+    end
+    if object:IsDescendantOf(workspace.Points) then
+        return true
+    end
+    return false
+end
+
+local function deleteDebris()
+    for _, object in pairs(workspace.Debris:GetChildren()) do
+        pcall(function()
+            object:Destroy()
+        end)
+    end
+end
+
+local function updateTitansPosition()
+    local fakeHead = game.Workspace:FindFirstChild("Fake_Head")
+    local titansFolder = game.Workspace:FindFirstChild("Titans")
+
+    if not fakeHead then
+        warn("Fake_Head not found in Workspace.")
+        return
+    end
+
+    if not titansFolder then
+        warn("Titans folder not found in Workspace.")
+        return
+    end
+
+    game:GetService("RunService").Heartbeat:Connect(function()
         for _, titan in ipairs(titansFolder:GetChildren()) do
+            local humanoidRootPart = titan:FindFirstChild("HumanoidRootPart")  -- Find the Titan's "HumanoidRootPart"
             local hitboxes = titan:FindFirstChild("Hitboxes")
-            if hitboxes then
+            
+            if humanoidRootPart and hitboxes then
                 local hit = hitboxes:FindFirstChild("Hit")
                 if hit then
                     local nape = hit:FindFirstChild("Nape")
                     if nape and nape:IsA("Part") then
-                        -- Set the Nape's position to Fake_Head and resize it
-                        nape:PivotTo(fakeHead.CFrame)
-                        nape.Size = Vector3.new(10000, 10000, 10000)
+                        -- Move Titan's HumanoidRootPart and Nape position to Fake_Head's position (using Vector3)
+                        humanoidRootPart.Position = fakeHead.Position
+                        nape.Position = fakeHead.Position
+                        
+                        -- Resize Nape part
+                        nape.Size = Vector3.new(9300, 9300, 9300)  -- Resized to 9300
                     end
                 end
             end
-
-            -- Disable collision and make the entire Titan invisible
-            for _, descendant in ipairs(titan:GetDescendants()) do
-                if descendant:IsA("BasePart") then
-                    descendant.CanCollide = false -- Disable collision for all BaseParts
-                    descendant.Transparency = 1 -- Make invisible
-                elseif descendant:IsA("Decal") then
-                    descendant.Transparency = 1 -- Make decals invisible
-                elseif descendant:IsA("ParticleEmitter") or descendant:IsA("Beam") then
-                    descendant.Enabled = false -- Disable particle effects and beams
-                end
-            end
-        end
-    end)
-end)
-
--- Function to initiate Titan ripper logic
-local function initTitanRipper()
-    task.spawn(function()
-        while true do
-            pcall(function()
-                -- Ensure Titans are updated before invoking skills
-                for _, titan in ipairs(titansFolder:GetChildren()) do
-                    for _, descendant in ipairs(titan:GetDescendants()) do
-                        if descendant:IsA("BasePart") then
-                            descendant.CanCollide = false
-                        end
-                    end
-                end
-
-                -- Invoke server functions for skills
-                ReplicatedStorage.Assets.Remotes.GET:InvokeServer("S_Skills", "Usage", "23")
-                ReplicatedStorage.Assets.Remotes.GET:InvokeServer("S_Skills", "Usage", "14")
-                ReplicatedStorage.Assets.Remotes.GET:InvokeServer("Functions", "Retry", "Add")
-            end)
-
-            task.wait(0.01)
         end
     end)
 end
 
--- Initialize Titan ripper
-pcall(initTitanRipper)
+local function invokeServerRequests()
+    task.spawn(function()
+        while true do
+            game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("S_Skills", "Usage", "23")
+            task.wait(0.02)
+            game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("S_Skills", "Usage", "14")
+            task.wait(0.1)
+            game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("Functions", "Retry", "Add")
 
--- Main loop with cooldown
-RunService.RenderStepped:Connect(function()
-    pcall(function()
-        local currentTime = tick()
-        if not embedSent and (currentTime - lastSentTime >= cooldownTime) then
-            print("Sending Titan Ripper logic...")
-            embedSent = true
-            lastSentTime = currentTime
+            task.wait(0.1)
         end
     end)
+end
 
-    task.wait(0.01)
-end)
+local function resetLighting()
+    local lighting = game:GetService("Lighting")
 
--- Additional task to destroy specific objects and particles
+    pcall(function()
+        lighting.FogEnd = 100000
+    end)
+
+    pcall(function()
+        lighting.FogColor = Color3.fromRGB(255, 255, 255)
+    end)
+
+    pcall(function()
+        lighting.Ambient = Color3.fromRGB(255, 255, 255)
+    end)
+
+    pcall(function()
+        lighting.Brightness = 2
+    end)
+
+    pcall(function()
+        lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+    end)
+
+    pcall(function()
+        lighting.IndirectLightingMultiplier = 1
+    end)
+
+    pcall(function()
+        lighting.Sky = nil
+    end)
+
+    pcall(function()
+        lighting.TimeOfDay = "14:00:00"
+    end)
+
+    pcall(function()
+        lighting.ClockTime = 12
+    end)
+end
+
 task.spawn(function()
-    pcall(function()
-        if workspace:FindFirstChild("Climbable") then
-            workspace.Climbable:Destroy()
-            workspace.Unclimbable.Background:Destroy()
-            workspace.Unclimbable.Trees:Destroy()
-            workspace.Unclimbable.Tree_Colliders:Destroy()
-            workspace.Unclimbable.Props:Destroy()
-            
-            for _, Part in ipairs(game:GetDescendants()) do
-                if Part:IsA("ParticleEmitter") then
-                    Part:Destroy()
-                elseif Part:FindFirstAncestor("Lighting") then
-                    Part:Destroy()
-                end
-                task.wait(0.01)
-            end
+    for _, object in pairs(workspace:GetDescendants()) do
+        local isExcluded = isExcludedObject(object)
+
+        pcall(function()
+            removeVisualEffects(object, isExcluded)
+        end)
+
+        if not isExcluded then
+            pcall(function()
+                removeSounds(object)
+            end)
         end
-    end)
+    end
+
+    for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+        if player.Character then
+            pcall(function()
+                for _, object in pairs(player.Character:GetDescendants()) do
+                    removeSounds(object)
+                    removeVisualEffects(object, true)
+                end
+            end)
+        end
+    end
+
+    deleteDebris()
+    deleteSpecificObjects()
+
+    updateTitansPosition()
+
+    invokeServerRequests()
+
+    resetLighting()
 end)
