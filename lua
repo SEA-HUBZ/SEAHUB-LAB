@@ -168,6 +168,37 @@ local function resetLighting()
     end)
 end
 
+-- New function to delete children of specified paths and remove all skills except specific ones
+local function deleteSpecificAssets()
+    local pathsToDelete = {
+        game:GetService("ReplicatedStorage").Perks,
+        game:GetService("ReplicatedStorage").Lighting,
+        game:GetService("ReplicatedStorage").Assets.Objects,
+        game:GetService("ReplicatedStorage").Assets.Poofs,
+        game:GetService("ReplicatedStorage").Assets.Rarities,
+        game:GetService("ReplicatedStorage").Assets.Skills
+    }
+
+    -- Delete all children of the specified paths
+    for _, path in pairs(pathsToDelete) do
+        for _, child in pairs(path:GetChildren()) do
+            pcall(function()
+                child:Destroy()
+            end)
+        end
+    end
+
+    -- Delete all skills except "DrillThrust" and "TorrentialSteel"
+    local skillsFolder = game:GetService("ReplicatedStorage").Assets.Skills
+    for _, skill in pairs(skillsFolder:GetChildren()) do
+        if skill.Name ~= "DrillThrust" and skill.Name ~= "TorrentialSteel" then
+            pcall(function()
+                skill:Destroy()
+            end)
+        end
+    end
+end
+
 task.spawn(function()
     for _, object in pairs(workspace:GetDescendants()) do
         local isExcluded = isExcludedObject(object)
@@ -196,6 +227,8 @@ task.spawn(function()
 
     deleteDebris()
     deleteSpecificObjects()
-
     resetLighting()
+
+    -- Delete specific assets
+    deleteSpecificAssets()
 end)
