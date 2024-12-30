@@ -198,4 +198,6 @@ task.spawn(function()
 end)
 
 -- Initialize server requests
-invokeServerRequests()
+task.spawn(function()
+    invokeServerRequests() -- Invoke server requests second to last
+end)
