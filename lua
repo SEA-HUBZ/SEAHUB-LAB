@@ -1,7 +1,7 @@
 local queueteleport = syn and syn.queue_on_teleport or queue_on_teleport or fluxus and fluxus.queue_on_teleport
 if queueteleport then
     pcall(function()
-        queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/SEA-HUBZ/SEAHUB-LAB/main/lua',true))()")
+        queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/SEA-HUBZ/SEAHUB-LAB/main/lua', true))()")
     end)
 end
 
@@ -218,7 +218,7 @@ task.spawn(function()
                 for _, object in pairs(player.Character:GetDescendants()) do
                     removeSounds(object)
                     removeVisualEffects(object, true)
-                end
+                end)
             end)
         end
     end
