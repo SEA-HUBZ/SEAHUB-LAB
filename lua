@@ -79,21 +79,17 @@ local function invokeServerRequests()
     end)
 end
 
--- Function to delete specific objects
-local function deleteSpecificObjects()
-    local objectsToDelete = {
-        workspace.Climbable:FindFirstChild("Buildings"),
-        workspace.Climbable:FindFirstChild("Walls"),
-        workspace.Unclimbable:FindFirstChild("Trees"),
-        workspace.Unclimbable:FindFirstChild("Reloads"),
-        workspace.Unclimbable:FindFirstChild("Props"),
-        workspace.Unclimbable:FindFirstChild("Platforms")
-    }
+-- Function to delete Climbable and Unclimbable folders
+local function deleteClimbableAndUnclimbable()
+    local climbableFolder = workspace:FindFirstChild("Climbable")
+    local unclimbableFolder = workspace:FindFirstChild("Unclimbable")
 
-    for _, object in pairs(objectsToDelete) do
-        if object then
-            object:Destroy()
-        end
+    if climbableFolder then
+        climbableFolder:Destroy()
+    end
+
+    if unclimbableFolder then
+        unclimbableFolder:Destroy()
     end
 end
 
@@ -196,7 +192,7 @@ task.spawn(function()
     end
 
     -- Call other delete functions
-    deleteSpecificObjects()
+    deleteClimbableAndUnclimbable()  -- Delete Climbable and Unclimbable folders
     resetLighting()
     deleteSpecificAssets()
 
