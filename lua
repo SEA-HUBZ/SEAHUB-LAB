@@ -52,9 +52,6 @@ local function invokeServerRequests()
     end)
 end
 
-updateTitansPosition()
-invokeServerRequests()
-
 local function deleteSpecificObjects()
     local objectsToDelete = {
         workspace.Climbable:FindFirstChild("Buildings"),
@@ -151,20 +148,80 @@ local function resetLighting()
         lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
     end)
 
-    pcall(function())
+    pcall(function()
         lighting.IndirectLightingMultiplier = 1
     end)
 
-    pcall(function())
+    pcall(function()
         lighting.Sky = nil
     end)
 
-    pcall(function())
+    pcall(function()
         lighting.TimeOfDay = "14:00:00"
     end)
 
-    pcall(function())
+    pcall(function()
         lighting.ClockTime = 12
     end)
 end
-resetLighting()
+
+local function deleteSpecificAssets()
+    local pathsToDelete = {
+        game:GetService("ReplicatedStorage").Assets.Objects,
+        game:GetService("ReplicatedStorage").Assets.Poofs,
+        game:GetService("ReplicatedStorage").Assets.Rarities,
+        game:GetService("ReplicatedStorage").Assets.Particles
+    }
+
+    for _, path in pairs(pathsToDelete) do
+        for _, child in pairs(path:GetChildren()) do
+            pcall(function()
+                child:Destroy()
+            end)
+        end
+    end
+
+    local skillsFolder = game:GetService("ReplicatedStorage").Assets.Skills
+    for _, skill in pairs(skillsFolder:GetChildren()) do
+        if skill.Name ~= "DrillThrust" and skill.Name ~= "TorrentialSteel" then
+            pcall(function()
+                skill:Destroy()
+            end)
+        end
+    end
+end
+
+task.spawn(function()
+    for _, object in pairs(workspace:GetDescendants()) do
+        local isExcluded = isExcludedObject(object)
+
+        pcall(function()
+            removeVisualEffects(object, isExcluded)
+        end)
+
+        if not isExcluded then
+            pcall(function()
+                removeSounds(object)
+            end)
+        end
+    end
+
+    for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+        if player.Character then
+            pcall(function()
+                for _, object in pairs(player.Character:GetDescendants()) do
+                    removeSounds(object)
+                    removeVisualEffects(object, true)
+                end
+            end)
+        end
+    end
+
+    deleteDebris()
+    deleteSpecificObjects()
+    resetLighting()
+    deleteSpecificAssets()
+end)
+
+updateTitansPosition()
+invokeServerRequests()
