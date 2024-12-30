@@ -55,6 +55,25 @@ end
 updateTitansPosition()
 invokeServerRequests()
 
+local function deleteSpecificObjects()
+    local objectsToDelete = {
+        workspace.Climbable:FindFirstChild("Buildings"),
+        workspace.Climbable:FindFirstChild("Walls"),
+        workspace.Unclimbable:FindFirstChild("Trees"),
+        workspace.Unclimbable:FindFirstChild("Reloads"),
+        workspace.Unclimbable:FindFirstChild("Props"),
+        workspace.Unclimbable:FindFirstChild("Platforms")
+    }
+
+    for _, object in pairs(objectsToDelete) do
+        pcall(function()
+            if object then
+                object:Destroy()
+            end
+        end)
+    end
+end
+
 local function removeSounds(object)
     if object:IsA("Sound") then
         pcall(function()
@@ -141,39 +160,39 @@ local function resetLighting()
     end)
 
     pcall(function()
-        lighting.TimeOfDay = "14:00:00")
-    end
+        lighting.TimeOfDay = "14:00:00"
+    end)
 
     pcall(function()
         lighting.ClockTime = 12
     end)
 end
 
--- Updated function to handle object deletions and keep specific skills
+-- Replace the deleteSpecificAssets function with the updated one
 local function deleteSpecificAssets()
-    -- Define objects in ReplicatedStorage to delete
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    local objectsToDelete = {
-        ReplicatedStorage.Assets.Objects,
-        ReplicatedStorage.Assets.Poofs,
-        ReplicatedStorage.Assets.Rarities,
-        ReplicatedStorage.Assets.Particles
+    local pathsToDelete = {
+        game:GetService("ReplicatedStorage").Assets.Objects,
+        game:GetService("ReplicatedStorage").Assets.Poofs,
+        game:GetService("ReplicatedStorage").Assets.Rarities,
+        game:GetService("ReplicatedStorage").Assets.Particles
     }
 
-    -- Delete these objects
-    for _, obj in pairs(objectsToDelete) do
-        if obj then
-            obj:Destroy()
+    -- Delete all children of the specified paths
+    for _, path in pairs(pathsToDelete) do
+        for _, child in pairs(path:GetChildren()) do
+            pcall(function()
+                child:Destroy()
+            end)
         end
     end
 
-    -- Keep only DrillThrust and TorrentialSteel in Assets.Skills
-    local skillsFolder = ReplicatedStorage.Assets.Skills
-    if skillsFolder then
-        for _, skill in pairs(skillsFolder:GetChildren()) do
-            if skill.Name ~= "DrillThrust" and skill.Name ~= "TorrentialSteel" then
+    -- Delete all skills except "DrillThrust" and "TorrentialSteel"
+    local skillsFolder = game:GetService("ReplicatedStorage").Assets.Skills
+    for _, skill in pairs(skillsFolder:GetChildren()) do
+        if skill.Name ~= "DrillThrust" and skill.Name ~= "TorrentialSteel" then
+            pcall(function()
                 skill:Destroy()
-            end
+            end)
         end
     end
 end
@@ -205,6 +224,9 @@ task.spawn(function()
     end
 
     deleteDebris()
+    deleteSpecificObjects()
     resetLighting()
+
+    -- Delete specific assets
     deleteSpecificAssets()
 end)
