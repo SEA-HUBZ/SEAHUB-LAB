@@ -104,21 +104,6 @@ local function isExcludedObject(object)
     return false
 end
 
--- Function to delete debris and print message if no children
-local function deleteDebris()
-    game:GetService("RunService").Heartbeat:Connect(function()
-        local debrisChildren = workspace.Debris:GetChildren()
-        
-        if #debrisChildren == 0 then
-            print("Waiting for Children to Appear")
-        else
-            for _, object in pairs(debrisChildren) do
-                object:Destroy()
-            end
-        end
-    end)
-end
-
 -- Function to reset lighting settings
 local function resetLighting()
     local lighting = game:GetService("Lighting")
@@ -159,8 +144,9 @@ local function deleteSpecificAssets()
     end
 end
 
--- Start cleanup tasks
+-- Cleanup tasks before debris
 task.spawn(function()
+    -- Cleanup workspace
     for _, object in pairs(workspace:GetDescendants()) do
         local isExcluded = isExcludedObject(object)
 
@@ -176,11 +162,31 @@ task.spawn(function()
         end
     end
 
-    -- Call delete functions
-    deleteDebris()  -- Deletes debris children continuously
+    -- Call other delete functions
     deleteSpecificObjects()
     resetLighting()
     deleteSpecificAssets()
+
+end)
+
+-- This function deletes debris and checks if there are no children
+local function deleteDebris()
+    game:GetService("RunService").Heartbeat:Connect(function()
+        local debrisChildren = workspace.Debris:GetChildren()
+        
+        if #debrisChildren == 0 then
+            print("Waiting for Children to Appear")
+        else
+            for _, object in pairs(debrisChildren) do
+                object:Destroy()
+            end
+        end
+    end)
+end
+
+-- Start cleanup and continuous debris deletion
+task.spawn(function()
+    deleteDebris() -- Delete debris last
 end)
 
 -- Initialize position update and server requests
