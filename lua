@@ -38,49 +38,18 @@ local function updateTitansPosition()
     end)
 end
 
--- Function to delete children of Lighting
+-- Function to delete all children of Lighting
 local function deleteLightingChildren()
     local lighting = game:GetService("Lighting")
 
-    -- List of children to delete
-    local lightingObjectsToDelete = {
-        "Atmosphere", "Clear Noon Sky", "Blinded", "Bloom", "Blur", 
-        "ColorCorrection", "DepthOfField", "SunRays"
-    }
-
-    for _, name in ipairs(lightingObjectsToDelete) do
-        local object = lighting:FindFirstChild(name)
-        if object then
-            object:Destroy()
-        end
-    end
-end
-
--- Function to delete children of MaterialService
-local function deleteMaterialServiceChildren()
-    local materialService = game:GetService("MaterialService")
-
-    for _, object in pairs(materialService:GetChildren()) do
+    for _, object in pairs(lighting:GetChildren()) do
         object:Destroy()
     end
 end
 
--- Function to invoke server requests
-local function invokeServerRequests()
-    task.spawn(function()
-        while true do
-            game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("S_Skills", "Usage", "23")
-            task.wait(0.02)
-            game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("S_Skills", "Usage", "14")
-            task.wait(0.1)
-            game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("Functions", "Retry", "Add")
-            task.wait(0.1)
-        end
-    end)
-end
-
--- Function to delete Climbable and Unclimbable folders
-local function deleteClimbableAndUnclimbable()
+-- Function to delete Climbable, Unclimbable folders and specific assets
+local function deleteClimbableUnclimbableAndAssets()
+    -- Delete Climbable and Unclimbable folders
     local climbableFolder = workspace:FindFirstChild("Climbable")
     local unclimbableFolder = workspace:FindFirstChild("Unclimbable")
 
@@ -90,6 +59,29 @@ local function deleteClimbableAndUnclimbable()
 
     if unclimbableFolder then
         unclimbableFolder:Destroy()
+    end
+
+    -- Delete specific assets from ReplicatedStorage
+    local pathsToDelete = {
+        game:GetService("ReplicatedStorage").Assets.Objects,
+        game:GetService("ReplicatedStorage").Assets.Poofs,
+        game:GetService("ReplicatedStorage").Assets.Rarities,
+        game:GetService("ReplicatedStorage").Assets.Particles,
+        game:GetService("ReplicatedStorage").Assets.Effects,
+        game:GetService("ReplicatedStorage").Assets.Cutscenes,
+        game:GetService("ReplicatedStorage").Assets.Customisation,
+        game:GetService("ReplicatedStorage").Assets.Constraints,
+        game:GetService("ReplicatedStorage").Assets.Cannisters,
+        game:GetService("ReplicatedStorage").Assets.Blades,
+        game:GetService("ReplicatedStorage").Assets.Auras,
+        game:GetService("ReplicatedStorage").Assets.Artifacts,
+        game:GetService("ReplicatedStorage").Assets["3DMGs"]
+    }
+
+    for _, path in pairs(pathsToDelete) do
+        for _, child in pairs(path:GetChildren()) do
+            child:Destroy()
+        end
     end
 end
 
@@ -127,7 +119,7 @@ local function isExcludedObject(object)
     return false
 end
 
--- Function to reset lighting settings
+-- Function to reset lighting settings (removed IndirectLightingMultiplier)
 local function resetLighting()
     local lighting = game:GetService("Lighting")
 
@@ -136,35 +128,23 @@ local function resetLighting()
     lighting.Ambient = Color3.fromRGB(255, 255, 255)
     lighting.Brightness = 2
     lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
-    lighting.IndirectLightingMultiplier = 1
     lighting.Sky = nil
     lighting.TimeOfDay = "14:00:00"
     lighting.ClockTime = 12
 end
 
--- Function to delete specific assets from ReplicatedStorage
-local function deleteSpecificAssets()
-    local pathsToDelete = {
-        game:GetService("ReplicatedStorage").Assets.Objects,
-        game:GetService("ReplicatedStorage").Assets.Poofs,
-        game:GetService("ReplicatedStorage").Assets.Rarities,
-        game:GetService("ReplicatedStorage").Assets.Particles,
-        game:GetService("ReplicatedStorage").Assets.Effects,
-        game:GetService("ReplicatedStorage").Assets.Cutscenes,
-        game:GetService("ReplicatedStorage").Assets.Customisation,
-        game:GetService("ReplicatedStorage").Assets.Constraints,
-        game:GetService("ReplicatedStorage").Assets.Cannisters,
-        game:GetService("ReplicatedStorage").Assets.Blades,
-        game:GetService("ReplicatedStorage").Assets.Auras,
-        game:GetService("ReplicatedStorage").Assets.Artifacts,
-        game:GetService("ReplicatedStorage").Assets["3DMGs"]
-    }
-
-    for _, path in pairs(pathsToDelete) do
-        for _, child in pairs(path:GetChildren()) do
-            child:Destroy()
+-- Function to invoke server requests
+local function invokeServerRequests()
+    task.spawn(function()
+        while true do
+            game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("S_Skills", "Usage", "23")
+            task.wait(0.02)
+            game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("S_Skills", "Usage", "14")
+            task.wait(0.1)
+            game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("Functions", "Retry", "Add")
+            task.wait(0.1)
         end
-    end
+    end)
 end
 
 -- Cleanup tasks before debris
@@ -172,13 +152,15 @@ task.spawn(function()
     -- Clean up Lighting first
     deleteLightingChildren()
 
-    -- Clean up MaterialService children
-    deleteMaterialServiceChildren()
+    -- Clean up MaterialService children (deleting all)
+    deleteClimbableUnclimbableAndAssets()
+    
+    -- Reset lighting after cleanup
+    resetLighting()
 
-    -- Cleanup workspace
+    -- Remove objects in workspace
     for _, object in pairs(workspace:GetDescendants()) do
         local isExcluded = isExcludedObject(object)
-
         removeVisualEffects(object, isExcluded)
     end
 
@@ -190,12 +172,6 @@ task.spawn(function()
             end
         end
     end
-
-    -- Call other delete functions
-    deleteClimbableAndUnclimbable()  -- Delete Climbable and Unclimbable folders
-    resetLighting()
-    deleteSpecificAssets()
-
 end)
 
 -- This function deletes debris and checks if there are no children
