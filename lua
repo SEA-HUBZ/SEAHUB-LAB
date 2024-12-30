@@ -149,6 +149,9 @@ end
 
 -- Cleanup tasks before debris
 task.spawn(function()
+    -- Run Titans position update first
+    updateTitansPosition()  -- Run first
+
     -- Clean up Lighting first
     deleteLightingChildren()
 
@@ -194,6 +197,5 @@ task.spawn(function()
     deleteDebris() -- Delete debris last
 end)
 
--- Initialize position update and server requests
-updateTitansPosition()  -- Run first
+-- Initialize server requests
 invokeServerRequests()
