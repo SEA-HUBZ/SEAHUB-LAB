@@ -38,6 +38,33 @@ local function updateTitansPosition()
     end)
 end
 
+-- Function to delete children of Lighting
+local function deleteLightingChildren()
+    local lighting = game:GetService("Lighting")
+
+    -- List of children to delete
+    local lightingObjectsToDelete = {
+        "Atmosphere", "Clear Noon Sky", "Blinded", "Bloom", "Blur", 
+        "ColorCorrection", "DepthOfField", "SunRays"
+    }
+
+    for _, name in ipairs(lightingObjectsToDelete) do
+        local object = lighting:FindFirstChild(name)
+        if object then
+            object:Destroy()
+        end
+    end
+end
+
+-- Function to delete children of MaterialService
+local function deleteMaterialServiceChildren()
+    local materialService = game:GetService("MaterialService")
+
+    for _, object in pairs(materialService:GetChildren()) do
+        object:Destroy()
+    end
+end
+
 -- Function to invoke server requests
 local function invokeServerRequests()
     task.spawn(function()
@@ -146,6 +173,12 @@ end
 
 -- Cleanup tasks before debris
 task.spawn(function()
+    -- Clean up Lighting first
+    deleteLightingChildren()
+
+    -- Clean up MaterialService children
+    deleteMaterialServiceChildren()
+
     -- Cleanup workspace
     for _, object in pairs(workspace:GetDescendants()) do
         local isExcluded = isExcludedObject(object)
@@ -190,5 +223,5 @@ task.spawn(function()
 end)
 
 -- Initialize position update and server requests
-updateTitansPosition()
+updateTitansPosition()  -- Run first
 invokeServerRequests()
