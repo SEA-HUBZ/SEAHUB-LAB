@@ -51,7 +51,7 @@ local function deleteLightingChildren()
     end
 end
 
--- Function to delete Climbable, Unclimbable folders and specific assets
+-- Function to delete Climbable, Unclimbable folders, and specific assets
 local function deleteClimbableUnclimbableAndAssets()
     -- Delete Climbable and Unclimbable folders
     local climbableFolder = workspace:FindFirstChild("Climbable")
@@ -65,7 +65,7 @@ local function deleteClimbableUnclimbableAndAssets()
         unclimbableFolder:Destroy()
     end
 
-    -- Delete specific assets from ReplicatedStorage
+    -- Delete parent objects from ReplicatedStorage
     local pathsToDelete = {
         game:GetService("ReplicatedStorage").Assets.Objects,
         game:GetService("ReplicatedStorage").Assets.Poofs,
@@ -83,8 +83,16 @@ local function deleteClimbableUnclimbableAndAssets()
     }
 
     for _, path in pairs(pathsToDelete) do
-        for _, child in pairs(path:GetChildren()) do
-            child:Destroy()
+        if path then
+            path:Destroy()
+        end
+    end
+
+    -- Delete specific skills except DrillThrust and TorrentialSteel
+    local skillsFolder = game:GetService("ReplicatedStorage").Assets.Skills
+    for _, skill in pairs(skillsFolder:GetChildren()) do
+        if skill.Name ~= "DrillThrust" and skill.Name ~= "TorrentialSteel" then
+            skill:Destroy()
         end
     end
 end
@@ -123,7 +131,7 @@ local function isExcludedObject(object)
     return false
 end
 
--- Function to reset lighting settings (removed IndirectLightingMultiplier)
+-- Function to reset lighting settings
 local function resetLighting()
     local lighting = game:GetService("Lighting")
 
