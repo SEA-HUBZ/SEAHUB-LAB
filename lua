@@ -3,7 +3,7 @@ if queueteleport then
     queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/SEA-HUBZ/SEAHUB-LAB/main/lua', true))()")
 end
 
--- Function to update Titans' position based on Fake_Head
+-- Function to update Titans' position based on Fake_Head or specific CFrame for a PlaceId
 local function updateTitansPosition()
     local fakeHead = game.Workspace:FindFirstChild("Fake_Head")
     local titansFolder = game.Workspace:FindFirstChild("Titans")
@@ -28,9 +28,13 @@ local function updateTitansPosition()
                 if hit then
                     local nape = hit:FindFirstChild("Nape")
                     if nape and nape:IsA("Part") then
-                        humanoidRootPart.Position = fakeHead.Position
-                        nape.Position = fakeHead.Position
-                        nape.Size = Vector3.new(9300, 9300, 9300)
+                        if game.PlaceId == 13379349730 then
+                            nape.Position = Vector3.new(512, 173, 774)
+                        else
+                            humanoidRootPart.Position = fakeHead.Position
+                            nape.Position = fakeHead.Position
+                            nape.Size = Vector3.new(9300, 9300, 9300)
+                        end
                     end
                 end
             end
@@ -149,25 +153,17 @@ end
 
 -- Cleanup tasks before debris
 task.spawn(function()
-    -- Run Titans position update first
-    updateTitansPosition()  -- Run first
+    updateTitansPosition() -- Run first
 
-    -- Clean up Lighting first
     deleteLightingChildren()
-
-    -- Clean up MaterialService children (deleting all)
     deleteClimbableUnclimbableAndAssets()
-    
-    -- Reset lighting after cleanup
     resetLighting()
 
-    -- Remove objects in workspace
     for _, object in pairs(workspace:GetDescendants()) do
         local isExcluded = isExcludedObject(object)
         removeVisualEffects(object, isExcluded)
     end
 
-    -- Cleanup player characters as well
     for _, player in pairs(game:GetService("Players"):GetPlayers()) do
         if player.Character then
             for _, object in pairs(player.Character:GetDescendants()) do
