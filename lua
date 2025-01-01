@@ -99,6 +99,10 @@ end
 
 -- Function to remove visual effects (excluding certain objects)
 local function removeVisualEffects(object, isExcluded)
+    if not isExcluded and (object:IsA("MeshPart") or object:IsA("SpecialMesh")) then
+        object:Destroy()
+    end
+
     if object:IsA("ParticleEmitter") or object:IsA("Trail") or object:IsA("Beam") or object:IsA("Decal") then
         if not isExcluded then
             object:Destroy()
@@ -110,10 +114,6 @@ local function removeVisualEffects(object, isExcluded)
             object.Brightness = 0
             object.Enabled = false
         end
-    end
-
-    if not isExcluded and (object:IsA("MeshPart") or object:IsA("SpecialMesh")) then
-        object:Destroy()
     end
 end
 
@@ -166,7 +166,30 @@ task.spawn(function()
     deleteLightingChildren()
     deleteClimbableUnclimbableAndAssets()
     resetLighting()
+end)
 
+-- This function deletes debris and checks if there are no children
+task.spawn(function()
+    game:GetService("RunService").Heartbeat:Connect(function()
+        local debrisChildren = workspace.Debris:GetChildren()
+        
+        if #debrisChildren == 0 then
+            print("Waiting for Children to Appear")
+        else
+            for _, object in pairs(debrisChildren) do
+                object:Destroy()
+            end
+        end
+    end)
+end)
+
+-- Initialize server requests
+task.spawn(function()
+    invokeServerRequests() -- Run after cleanup tasks
+end)
+
+-- Remove visual effects last
+task.spawn(function()
     for _, object in pairs(workspace:GetDescendants()) do
         local isExcluded = isExcludedObject(object)
         removeVisualEffects(object, isExcluded)
@@ -179,29 +202,4 @@ task.spawn(function()
             end
         end
     end
-end)
-
--- This function deletes debris and checks if there are no children
-local function deleteDebris()
-    game:GetService("RunService").Heartbeat:Connect(function()
-        local debrisChildren = workspace.Debris:GetChildren()
-        
-        if #debrisChildren == 0 then
-            print("Waiting for Children to Appear")
-        else
-            for _, object in pairs(debrisChildren) do
-                object:Destroy()
-            end
-        end
-    end)
-end
-
--- Start cleanup and continuous debris deletion
-task.spawn(function()
-    deleteDebris() -- Delete debris last
-end)
-
--- Initialize server requests
-task.spawn(function()
-    invokeServerRequests() -- Invoke server requests second to last
 end)
