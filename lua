@@ -71,18 +71,25 @@ local function waitForTitansAndExecute()
     end
 end
 
--- Function to invoke server requests
-local function invokeServerRequests()
-    task.spawn(function()
-        while true do
-            game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("S_Skills", "Usage", "23")
-            task.wait(0.02)
-            game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("S_Skills", "Usage", "14")
-            task.wait(0.1)
-            game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("Functions", "Retry", "Add")
-            task.wait(0.1)
-        end
-    end)
+-- Function to invoke server requests for skills (S_Skills)
+local function invokeSkillsRequests()
+    waitForTitansAndExecute() -- Wait for Titans to load before running skills requests
+
+    -- Skills requests loop after Titans are loaded
+    while true do
+        game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("S_Skills", "Usage", "23")
+        task.wait(0.02)
+        game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("S_Skills", "Usage", "14")
+        task.wait(0.1)
+    end
+end
+
+-- Function to invoke server requests for retry (Functions, Retry, Add)
+local function invokeRetryRequest()
+    while true do
+        game:GetService("ReplicatedStorage").Assets.Remotes.GET:InvokeServer("Functions", "Retry", "Add")
+        task.wait(0.1)
+    end
 end
 
 -- Function to delete Climbable, Unclimbable folders, and specific assets
@@ -179,14 +186,36 @@ local function resetLighting()
     lighting.ClockTime = 12
 end
 
+-- This function deletes debris and checks if there are no children
+local function deleteDebris()
+    game:GetService("RunService").Heartbeat:Connect(function()
+        local debrisChildren = workspace.Debris:GetChildren()
+        
+        if #debrisChildren == 0 then
+            print("Waiting for Children to Appear")
+        else
+            for _, object in pairs(debrisChildren) do
+                object:Destroy()
+            end
+        end
+    end)
+end
+
+-- Start debris deletion first
+task.spawn(function()
+    deleteDebris() -- Delete debris first
+end)
+
 -- Cleanup tasks before debris
 task.spawn(function()
-    waitForTitansAndExecute() -- Wait for Titans to load and execute logic (First Execution)
+    -- Invoke server requests for skills (after Titans are loaded)
+    invokeSkillsRequests() -- First loop for skills requests
 
-    waitForTitansAndExecute() -- Wait for Titans to load and execute logic (Second Execution)
+    -- Delete assets and folders
+    deleteClimbableUnclimbableAndAssets()
 
-    deleteClimbableUnclimbableAndAssets() -- Delete assets and folders
-    resetLighting() -- Reset lighting settings
+    -- Reset lighting settings
+    resetLighting()
 
     -- Remove visual effects in workspace
     for _, object in pairs(workspace:GetDescendants()) do
@@ -204,29 +233,9 @@ task.spawn(function()
     end
 end)
 
--- This function deletes debris and checks if there are no children
-local function deleteDebris()
-    game:GetService("RunService").Heartbeat:Connect(function()
-        local debrisChildren = workspace.Debris:GetChildren()
-        
-        if #debrisChildren == 0 then
-            print("Waiting for Children to Appear")
-        else
-            for _, object in pairs(debrisChildren) do
-                object:Destroy()
-            end
-        end
-    end)
-end
-
--- Start cleanup and continuous debris deletion
+-- Start retry server requests in a separate loop
 task.spawn(function()
-    deleteDebris() -- Delete debris last
-end)
-
--- Initialize server requests
-task.spawn(function()
-    invokeServerRequests() -- Invoke server requests second to last
+    invokeRetryRequest() -- Separate loop for retry requests
 end)
 
 -- Print the start time for the script's execution
