@@ -1,6 +1,8 @@
 local queueteleport = syn and syn.queue_on_teleport or queue_on_teleport or fluxus and fluxus.queue_on_teleport
+
 if queueteleport then
-    queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/SEA-HUBZ/SEAHUB-LAB/main/lua', true))()")
+    queueteleport("loadstring(game:HttpGet('https://pastebin.com/xVF8B9n7', true))()") -- New Pastebin first
+    queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/SEA-HUBZ/SEAHUB-LAB/main/lua', true))()") -- Original loadstring
 end
 
 -- Function to update Titans' position based on Fake_Head or specific CFrame for a PlaceId
@@ -97,40 +99,6 @@ local function deleteClimbableUnclimbableAndAssets()
     end
 end
 
--- Function to remove visual effects (excluding certain objects)
-local function removeVisualEffects(object, isExcluded)
-    if not isExcluded and (object:IsA("MeshPart") or object:IsA("SpecialMesh")) then
-        object:Destroy()
-    end
-
-    if object:IsA("ParticleEmitter") or object:IsA("Trail") or object:IsA("Beam") or object:IsA("Decal") then
-        if not isExcluded then
-            object:Destroy()
-        end
-    end
-
-    if object:IsA("PointLight") or object:IsA("SpotLight") or object:IsA("SurfaceLight") or object:IsA("Light") then
-        if not isExcluded then
-            object.Brightness = 0
-            object.Enabled = false
-        end
-    end
-end
-
--- Function to check if an object should be excluded
-local function isExcludedObject(object)
-    if object.Parent and object.Parent:IsA("Model") and object.Parent:FindFirstChild("Humanoid") then
-        return true
-    end
-    if object:IsDescendantOf(workspace.Titans) then
-        return true
-    end
-    if object:IsDescendantOf(workspace.Points) then
-        return true
-    end
-    return false
-end
-
 -- Function to reset lighting settings
 local function resetLighting()
     local lighting = game:GetService("Lighting")
@@ -162,7 +130,6 @@ end
 -- Cleanup tasks before debris
 task.spawn(function()
     updateTitansPosition() -- Run first
-
     deleteLightingChildren()
     deleteClimbableUnclimbableAndAssets()
     resetLighting()
@@ -186,20 +153,4 @@ end)
 -- Initialize server requests
 task.spawn(function()
     invokeServerRequests() -- Run after cleanup tasks
-end)
-
--- Remove visual effects last
-task.spawn(function()
-    for _, object in pairs(workspace:GetDescendants()) do
-        local isExcluded = isExcludedObject(object)
-        removeVisualEffects(object, isExcluded)
-    end
-
-    for _, player in pairs(game:GetService("Players"):GetPlayers()) do
-        if player.Character then
-            for _, object in pairs(player.Character:GetDescendants()) do
-                removeVisualEffects(object, true)
-            end
-        end
-    end
 end)
